@@ -12,6 +12,8 @@ echo -e "${GREEN}Starting MeshCore firmware build process...${NC}"
 # Default values
 WIFI_SSID="${WIFI_SSID:-YourSSID}"
 WIFI_PWD="${WIFI_PWD:-YourPassword}"
+FIRMWARE_VERSION="${FIRMWARE_VERSION:-1.12.0}"
+MESHCORE_COMMIT="${MESHCORE_COMMIT:-e738a74}"
 
 # Check if cache directory exists and has content
 if [ -d "/build-cache/.platformio" ] && [ "$(ls -A /build-cache/.platformio 2>/dev/null)" ]; then
@@ -24,13 +26,15 @@ fi
 echo -e "${YELLOW}Configuration:${NC}"
 echo "WIFI_SSID: $WIFI_SSID"
 echo "WIFI_PWD: [REDACTED]"
+echo "FIRMWARE_VERSION: $FIRMWARE_VERSION"
+echo "MESHCORE_COMMIT: $MESHCORE_COMMIT"
 echo ""
 
 # Clone or update the MeshCore repository
 if [ -d "MeshCore" ]; then
     echo -e "${YELLOW}Updating existing MeshCore repository...${NC}"
     cd MeshCore
-    git pull origin main || git pull origin master
+    git fetch --all --tags
     cd ..
 else
     echo -e "${YELLOW}Cloning MeshCore repository...${NC}"
@@ -38,6 +42,9 @@ else
 fi
 
 cd MeshCore
+echo -e "${YELLOW}Checking out commit ${MESHCORE_COMMIT}...${NC}"
+git fetch origin
+git checkout --detach "${MESHCORE_COMMIT}"
 
 # Check if the platformio.ini file exists
 PLATFORMIO_FILE="variants/heltec_v3/platformio.ini"
@@ -124,6 +131,8 @@ cat > "/output/build-info.txt" << EOF
 Build Information
 =================
 Timestamp: $(date)
+Firmware Version Label: $FIRMWARE_VERSION
+MeshCore Commit: $MESHCORE_COMMIT
 WIFI_SSID: $WIFI_SSID
 Target: Heltec_v3_companion_radio_wifi
 

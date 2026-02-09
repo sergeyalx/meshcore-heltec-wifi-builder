@@ -1,5 +1,5 @@
 # Use Ubuntu as the base image instead of Red Hat
-FROM ubuntu:24.04
+FROM debian:latest
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive

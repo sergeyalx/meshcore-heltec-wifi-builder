@@ -146,8 +146,28 @@ install_esptool() {
     fi
 }
 
-# Check for esptool
+# Check for esptool and update PATH if needed
 echo -e "${YELLOW}🔍 Checking for esptool...${NC}"
+
+# Ensure PATH includes common pip install locations
+export PATH="$PATH:$HOME/.local/bin"
+
+# Also try Python user site packages (common on macOS)
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_USER_BASE=$(python3 -m site --user-base 2>/dev/null || echo "")
+    if [ -n "$PYTHON_USER_BASE" ]; then
+        export PATH="$PATH:$PYTHON_USER_BASE/bin"
+    fi
+fi
+
+# Try Homebrew locations
+if [ -d "/opt/homebrew/bin" ]; then
+    export PATH="$PATH:/opt/homebrew/bin"
+fi
+if [ -d "/usr/local/bin" ]; then
+    export PATH="$PATH:/usr/local/bin"
+fi
+
 if ! command_exists esptool.py; then
     echo "esptool.py not found."
     read -p "Install esptool? (y/n): " -n 1 -r
@@ -272,35 +292,7 @@ flash_firmware() {
     fi
 }
 
-# Function to monitor serial output
-monitor_serial() {
-    echo ""
-    echo -e "${BLUE}📺 Serial Monitor${NC}"
-    echo -e "${YELLOW}Press Ctrl+C to exit monitor${NC}"
-    echo ""
-    
-    # Reset device first
-    echo -e "${YELLOW}🔄 Resetting device... Press RESET button now${NC}"
-    sleep 2
-    
-    if command_exists screen; then
-        echo -e "${GREEN}Starting serial monitor (screen)...${NC}"
-        echo "Commands: Ctrl+A then K to exit"
-        sleep 1
-        screen "$SELECTED_DEVICE" 115200
-    elif command_exists minicom; then
-        echo -e "${GREEN}Starting serial monitor (minicom)...${NC}"
-        minicom -D "$SELECTED_DEVICE" -b 115200
-    else
-        echo -e "${YELLOW}⚠️  No serial monitor found (screen/minicom)${NC}"
-        echo "Install with: brew install screen"
-        echo "Or use Arduino IDE Serial Monitor"
-        echo ""
-        echo "Manual connection:"
-        echo "  Device: $SELECTED_DEVICE"
-        echo "  Baud rate: 115200"
-    fi
-}
+
 
 # Main execution
 echo -e "${YELLOW}🔍 Step 1: Finding ESP32 device...${NC}"
@@ -314,20 +306,12 @@ if flash_firmware; then
     echo ""
     echo -e "${BLUE}📋 Next steps:${NC}"
     echo "1. Press RESET button on device"
-    echo "2. Monitor serial output to verify Wi-Fi connection"
-    echo "3. Look for connection to 'wifi' network"
+    echo "2. Monitor serial output to verify Wi-Fi connection (use Arduino IDE or screen)"
+    echo "3. Look for connection to your Wi-Fi network"
     echo ""
-    
-    read -p "Monitor serial output now? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        monitor_serial
-    else
-        echo -e "${YELLOW}💡 To monitor later:${NC}"
-        echo "  screen $SELECTED_DEVICE 115200"
-        echo "  (Press Ctrl+A then K to exit)"
-    fi
-    
+    echo -e "${YELLOW}💡 To monitor serial output:${NC}"
+    echo "  screen $SELECTED_DEVICE 115200"
+    echo "  (Press Ctrl+A then K to exit)"
     echo ""
     echo -e "${GREEN}✅ Flashing complete!${NC}"
     echo -e "${YELLOW}⚠️  Remember: This firmware contains your Wi-Fi credentials${NC}"

@@ -12,16 +12,15 @@ This build system was "vibe coded 🤮" with GitHub Copilot based on the excelle
 
 ## Testing info
 
-Tested with MeshCore 1.9.1 (commit: b2dcb06197897807fafb539c2710b2aa352792ee)
-https://github.com/meshcore-dev/MeshCore/commit/b2dcb06197897807fafb539c2710b2aa352792ee
+Configured to build MeshCore 1.12.0 from commit `e738a74`.
 
 
 ## Features
 
 - **Docker-based**: Clean, reproducible build environment using Ubuntu 24.04
 - **Automated Wi-Fi Configuration**: Simple sed-based replacement of Wi-Fi credentials in git repository
-- **Git-based Versioning**: Uses whatever version is current in the MeshCore repository
-- **Fresh Repository**: Always pulls the latest MeshCore code at build time
+- **Pinned Builds**: Defaults to MeshCore commit `e738a74` (version label `1.12.0`)
+- **Override Support**: You can choose a different MeshCore commit with `--commit`
 - **Safe Output**: Generates firmware files with clear naming and build information
 - **Build Caching**: Caches PlatformIO tools and dependencies for subsequent builds
 
@@ -46,6 +45,9 @@ https://github.com/meshcore-dev/MeshCore/commit/b2dcb06197897807fafb539c2710b2aa
 # Enable debug logging
 ./run-build.sh --ssid "MyWiFi" --password "MyPassword" --enable-debug
 
+# Build a specific MeshCore commit
+./run-build.sh --ssid "MyWiFi" --password "MyPassword" --commit e738a74 --version 1.12.0
+
 # Custom output directory
 ./run-build.sh --ssid "MyWiFi" --password "MyPassword" --output "/path/to/output"
 
@@ -59,6 +61,8 @@ https://github.com/meshcore-dev/MeshCore/commit/b2dcb06197897807fafb539c2710b2aa
 ### All Options
 - `-s, --ssid SSID`: Wi-Fi SSID (required)
 - `-p, --password PASSWORD`: Wi-Fi password (required)
+- `-v, --version VERSION`: Firmware version label for build metadata (default: `1.12.0`)
+- `--commit SHA`: MeshCore commit to build (default: `e738a74`)
 - `-o, --output DIR`: Output directory (default: ./firmware-output)
 - `-c, --cache DIR`: Cache directory (default: ./build-cache)
 - `--max-contacts NUM`: Maximum contacts (default: 300)
@@ -124,7 +128,7 @@ ls -la build-cache/
 
 - Docker
 - macOS, Linux, or Windows with WSL2
-- Internet connection (to clone the latest MeshCore repository)
+- Internet connection (to clone/fetch the MeshCore repository)
 
 
 
@@ -133,14 +137,15 @@ ls -la build-cache/
 ### Docker Image
 - **Base**: Ubuntu 24.04 (opensource alternative to Red Hat)
 - **Build Tools**: PlatformIO, Python 3, Git, GCC
-- **Process**: Clones latest MeshCore, directly replaces Wi-Fi placeholders, builds firmware
+- **Process**: Clones/fetches MeshCore, checks out pinned commit, replaces Wi-Fi placeholders, builds firmware
 
 ### Build Process
 1. Clone/update MeshCore repository from GitHub
-2. Replace Wi-Fi placeholders (`myssid`/`mypwd`) in platformio.ini using sed
-3. Build firmware using PlatformIO  
-4. Generate firmware files with clear naming
-5. Create build information file
+2. Check out the requested MeshCore commit
+3. Replace Wi-Fi placeholders (`myssid`/`mypwd`) in platformio.ini using sed
+4. Build firmware using PlatformIO
+5. Generate firmware files with clear naming
+6. Create build information file
 
 ## Troubleshooting
 

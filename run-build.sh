@@ -26,7 +26,8 @@ usage() {
     echo "Options:"
     echo "  -s, --ssid SSID         Wi-Fi SSID (required)"
     echo "  -p, --password PASSWORD Wi-Fi password (required)"
-    echo "  -v, --version VERSION   Firmware version (default: 1.7.3)"
+    echo "  -v, --version VERSION   Firmware version label (default: 1.12.0)"
+    echo "  --commit SHA            MeshCore commit to build (default: e738a74)"
     echo "  -o, --output DIR        Output directory (default: ./firmware-output)"
     echo "  -c, --cache DIR         Cache directory (default: ./build-cache)"
     echo "  --max-contacts NUM      Maximum contacts (default: 300)"
@@ -40,7 +41,7 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 --ssid MyWiFi --password MyPassword"
-    echo "  $0 -s MyWiFi -p MyPassword -v 1.8.0"
+    echo "  $0 -s MyWiFi -p MyPassword -v 1.12.0 --commit e738a74"
     echo "  $0 --ssid MyWiFi --password MyPassword --output /tmp/firmware"
     echo ""
     echo -e "${YELLOW}Warning: Your Wi-Fi credentials will be embedded in the firmware.${NC}"
@@ -50,7 +51,8 @@ usage() {
 # Parse command line arguments
 WIFI_SSID=""
 WIFI_PWD=""
-FIRMWARE_VERSION="1.9.1"
+FIRMWARE_VERSION="1.12.0"
+MESHCORE_COMMIT="e738a74"
 BUILD_ONLY=false
 NO_BUILD=false
 CLEAR_CACHE=false
@@ -71,6 +73,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -v|--version)
             FIRMWARE_VERSION="$2"
+            shift 2
+            ;;
+        --commit)
+            MESHCORE_COMMIT="$2"
             shift 2
             ;;
         -o|--output)
@@ -178,6 +184,7 @@ echo -e "${YELLOW}Starting firmware build process...${NC}"
 echo "SSID: $WIFI_SSID"
 echo "Password: [REDACTED]"
 echo "Version: $FIRMWARE_VERSION"
+echo "MeshCore commit: $MESHCORE_COMMIT"
 echo ""
 
 # Run the Docker container with cache volume and gomplate environment variables
@@ -186,6 +193,7 @@ docker run --rm \
     -e WIFI_SSID="$WIFI_SSID" \
     -e WIFI_PWD="$WIFI_PWD" \
     -e FIRMWARE_VERSION="$FIRMWARE_VERSION" \
+    -e MESHCORE_COMMIT="$MESHCORE_COMMIT" \
     ${MAX_CONTACTS:+-e MAX_CONTACTS="$MAX_CONTACTS"} \
     ${MAX_GROUP_CHANNELS:+-e MAX_GROUP_CHANNELS="$MAX_GROUP_CHANNELS"} \
     ${MESH_DEBUG:+-e MESH_DEBUG="$MESH_DEBUG"} \
