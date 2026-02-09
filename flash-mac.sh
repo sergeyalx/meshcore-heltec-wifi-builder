@@ -61,6 +61,9 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Pick esptool binary: prefer modern `esptool`, fallback to `esptool.py`.
+ESPTOOL_BIN=""
+
 # Function to install esptool
 install_esptool() {
     echo -e "${YELLOW}🔧 Installing esptool...${NC}"
@@ -106,7 +109,7 @@ install_esptool() {
     fi
     
     # Check if installation was successful
-    if command_exists esptool.py; then
+    if command_exists esptool || command_exists esptool.py; then
         echo -e "${GREEN}✅ esptool installed successfully${NC}"
     else
         echo -e "${YELLOW}⚠️  esptool may need PATH update. Trying common locations...${NC}"
@@ -130,7 +133,7 @@ install_esptool() {
         fi
         
         # Check again
-        if command_exists esptool.py; then
+        if command_exists esptool || command_exists esptool.py; then
             echo -e "${GREEN}✅ esptool found in user directory${NC}"
         else
             echo -e "${RED}❌ Error: esptool installation may have failed${NC}"
@@ -168,18 +171,30 @@ if [ -d "/usr/local/bin" ]; then
     export PATH="$PATH:/usr/local/bin"
 fi
 
-if ! command_exists esptool.py; then
-    echo "esptool.py not found."
+if command_exists esptool; then
+    ESPTOOL_BIN="esptool"
+    echo -e "${GREEN}✅ esptool found${NC}"
+elif command_exists esptool.py; then
+    ESPTOOL_BIN="esptool.py"
+    echo -e "${GREEN}✅ esptool.py found${NC}"
+else
+    echo "esptool not found."
     read -p "Install esptool? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         install_esptool
+        if command_exists esptool; then
+            ESPTOOL_BIN="esptool"
+        elif command_exists esptool.py; then
+            ESPTOOL_BIN="esptool.py"
+        else
+            echo -e "${RED}❌ esptool is still not available on PATH. Exiting.${NC}"
+            exit 1
+        fi
     else
         echo -e "${RED}❌ esptool is required for flashing. Exiting.${NC}"
         exit 1
     fi
-else
-    echo -e "${GREEN}✅ esptool.py found${NC}"
 fi
 
 echo ""
@@ -254,7 +269,7 @@ flash_firmware() {
     if [ "$ERASE_FLASH" = true ]; then
         echo -e "${YELLOW}🧹 Erasing flash memory...${NC}"
         echo -e "${RED}⚠️  WARNING: This will destroy all data on the device!${NC}"
-        if esptool.py --chip esp32s3 --port "$SELECTED_DEVICE" --baud "$BAUD_RATE" erase_flash; then
+        if "$ESPTOOL_BIN" --chip esp32s3 --port "$SELECTED_DEVICE" --baud "$BAUD_RATE" erase-flash; then
             echo -e "${GREEN}✅ Flash erased successfully${NC}"
             sleep 1
         else
@@ -265,7 +280,7 @@ flash_firmware() {
     
     # Try high-speed flash first
     echo -e "${YELLOW}🔥 Attempting high-speed flash (${BAUD_RATE} baud)...${NC}"
-    if esptool.py --chip esp32s3 --port "$SELECTED_DEVICE" --baud "$BAUD_RATE" write_flash 0x0 "$MERGED_FIRMWARE"; then
+    if "$ESPTOOL_BIN" --chip esp32s3 --port "$SELECTED_DEVICE" --baud "$BAUD_RATE" write-flash 0x0 "$MERGED_FIRMWARE"; then
         echo -e "${GREEN}✅ Firmware flashed successfully!${NC}"
         return 0
     else
@@ -273,7 +288,7 @@ flash_firmware() {
         
         # Try slower flash
         echo -e "${YELLOW}🐌 Attempting low-speed flash (${FALLBACK_BAUD} baud)...${NC}"
-        if esptool.py --chip esp32s3 --port "$SELECTED_DEVICE" --baud "$FALLBACK_BAUD" write_flash 0x0 "$MERGED_FIRMWARE"; then
+        if "$ESPTOOL_BIN" --chip esp32s3 --port "$SELECTED_DEVICE" --baud "$FALLBACK_BAUD" write-flash 0x0 "$MERGED_FIRMWARE"; then
             echo -e "${GREEN}✅ Firmware flashed successfully!${NC}"
             return 0
         else
