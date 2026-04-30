@@ -1,0 +1,24 @@
+name: Build MeshCore WiFi Firmware
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build firmware
+        run: |
+          chmod +x run-build.sh
+          ./run-build.sh --ssid "${{ secrets.WIFI_SSID }}" --password "${{ secrets.WIFI_PWD }}"
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshcore-wifi-firmware
+          path: |
+            firmware-output/*.bin
+          retention-days: 7
