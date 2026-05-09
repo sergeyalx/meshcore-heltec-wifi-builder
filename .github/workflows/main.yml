@@ -13,7 +13,7 @@ jobs:
       - name: Build firmware
         run: |
           chmod +x run-build.sh
-          ./run-build.sh -s "${{ secrets.ASYS4G }}" -p "${{ secrets.boostboost24 }}" --commit dee3e26 --version 1.15.0
+          ./run-build.sh -s "${{ secrets.WIFI_SSID }}" -p "${{ secrets.WIFI_PWD }}" --commit dee3e26 --version 1.15.0
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
